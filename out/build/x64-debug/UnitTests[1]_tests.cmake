@@ -1,5 +1,0 @@
-add_test([=[EngineSanity.BasicTruth]=]  C:/Users/piotr/Desktop/OpenGLModern/out/build/x64-debug/UnitTests.exe [==[--gtest_filter=EngineSanity.BasicTruth]==] --gtest_also_run_disabled_tests)
-set_tests_properties([=[EngineSanity.BasicTruth]=]  PROPERTIES WORKING_DIRECTORY C:/Users/piotr/Desktop/OpenGLModern/out/build/x64-debug SKIP_REGULAR_EXPRESSION [==[\[  SKIPPED \]]==])
-add_test([=[EngineSanity.MathWorks]=]  C:/Users/piotr/Desktop/OpenGLModern/out/build/x64-debug/UnitTests.exe [==[--gtest_filter=EngineSanity.MathWorks]==] --gtest_also_run_disabled_tests)
-set_tests_properties([=[EngineSanity.MathWorks]=]  PROPERTIES WORKING_DIRECTORY C:/Users/piotr/Desktop/OpenGLModern/out/build/x64-debug SKIP_REGULAR_EXPRESSION [==[\[  SKIPPED \]]==])
-set(  UnitTests_TESTS EngineSanity.BasicTruth EngineSanity.MathWorks)

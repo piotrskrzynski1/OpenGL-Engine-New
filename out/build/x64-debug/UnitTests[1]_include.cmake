@@ -1,5 +1,0 @@
-if(EXISTS "C:/Users/piotr/Desktop/OpenGLModern/out/build/x64-debug/UnitTests[1]_tests.cmake")
-  include("C:/Users/piotr/Desktop/OpenGLModern/out/build/x64-debug/UnitTests[1]_tests.cmake")
-else()
-  add_test(UnitTests_NOT_BUILT UnitTests_NOT_BUILT)
-endif()
