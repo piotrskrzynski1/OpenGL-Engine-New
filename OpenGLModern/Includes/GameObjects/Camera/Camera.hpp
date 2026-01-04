@@ -1,6 +1,7 @@
 #pragma once
 #include <OPENGL/glm/glm.hpp>
 #include <OPENGL/glm/gtc/matrix_transform.hpp>
+#include <Engine/Managers/LightManager.hpp>
 
 class RenderContext;
 
@@ -29,6 +30,9 @@ private:
     glm::vec3 up;
     glm::vec3 right;
     glm::vec3 worldUp;
+
+    //optional
+    std::shared_ptr<SpotLight> spotlight;
 
     float yaw;
     float pitch;

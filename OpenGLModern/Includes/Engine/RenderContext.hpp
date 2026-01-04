@@ -22,12 +22,12 @@ public:
     // --- Setters ---
     void SetViewMatrix(const glm::mat4& v);
     void SetProjectionMatrix(const glm::mat4& p);
-    void SetLightManager(const LightManager& lm);
+    void SetLightManager(std::shared_ptr<LightManager> lm);
     void SetPerspective(float fov, float aspect, float nearPlane, float farPlane);
 
 private:
     std::unique_ptr<Camera> mainCam;
-    LightManager lightmanager;
+    std::shared_ptr<LightManager> lightmanager;
     glm::mat4 view;
     glm::mat4 projection;
 };

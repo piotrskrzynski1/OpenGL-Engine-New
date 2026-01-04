@@ -2,7 +2,7 @@
 #include <Engine/Managers/ServiceLocator.hpp>
 #include "Engine/RenderContext.hpp"
 #include "Engine/Managers/InputManager.hpp"
-#include <OPENGL/GLFW/glfw3.h>
+#include <GLFW/glfw3.h>
 #include <cmath>
 
 Camera::Camera(glm::vec3 startPosition, glm::vec3 startUp, float startYaw, float startPitch)
@@ -20,6 +20,12 @@ Camera::Camera(glm::vec3 startPosition, glm::vec3 startUp, float startYaw, float
     auto render = ServiceLocator::Get().GetService<RenderContext>();
     const glm::mat4 view = glm::lookAt(position, position + front, up);
     render->SetViewMatrix(view);
+
+spotlight = ServiceLocator::Get().GetService<LightManager>()->addSpotLight(
+    position, 
+    front, 
+    glm::vec3(1.0f, 1.0f, 1.0f)
+);
 }
 
 void Camera::UpdateCameraVectors() {
@@ -81,5 +87,8 @@ void Camera::Update(double deltaTime) {
     glm::mat4 view = glm::lookAt(position, position + front, up);
     render->SetViewMatrix(view);
 
+    //side
+    spotlight->position = position;
+    spotlight->direction = front;
     input->ResetDeltas();
 }

@@ -12,11 +12,24 @@ struct PointLight {
     vec3 position;
     vec3 color;
     float intensity;
-    
-    // Attenuation
     float constant;
     float linear;
     float quadratic;
+};
+
+// --- NEW: SpotLight Struct ---
+struct SpotLight {
+    vec3 position;
+    vec3 direction;
+    float cutOff;
+    float outerCutOff;
+  
+    float constant;
+    float linear;
+    float quadratic;
+  
+    vec3 color;
+    float intensity;
 };
 
 struct Material {
@@ -29,15 +42,17 @@ struct Material {
 // UNIFORMS
 // ==========================================
 
-// Define maximums matching your C++ engine limits
 #define MAX_DIR_LIGHTS 4
 #define MAX_POINT_LIGHTS 16
+#define MAX_SPOT_LIGHTS 4  // --- NEW: Define Max Spot Lights ---
 
 uniform DirLight dirLights[MAX_DIR_LIGHTS];
 uniform PointLight pointLights[MAX_POINT_LIGHTS];
+uniform SpotLight spotLights[MAX_SPOT_LIGHTS]; // --- NEW: Array ---
 
 uniform int numDirLights;
 uniform int numPointLights;
+uniform int numSpotLights; // --- NEW: Count ---
 
 // ==========================================
 // CALCULATIONS
@@ -46,17 +61,12 @@ uniform int numPointLights;
 // 1. Calculate Directional Light
 vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir, vec3 albedoSpec, float specMapVal, float shininess) {
     vec3 lightDir = normalize(-light.direction);
-    
-    // Diffuse shading
     float diff = max(dot(normal, lightDir), 0.0);
-    
-    // Specular shading (Blinn-Phong)
     vec3 halfwayDir = normalize(lightDir + viewDir);
     float spec = pow(max(dot(normal, halfwayDir), 0.0), shininess);
     
-    // Combine results
-    vec3 ambient  = light.color * light.intensity * 0.1 * albedoSpec; // Low ambient base
-    vec3 diffuse  = light.color * light.intensity * diff * albedoSpec;
+    vec3 ambient = light.color * light.intensity * 0.1 * albedoSpec;
+    vec3 diffuse = light.color * light.intensity * diff * albedoSpec;
     vec3 specular = light.color * light.intensity * spec * specMapVal;
     
     return (ambient + diffuse + specular);
@@ -65,35 +75,51 @@ vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir, vec3 albedoSpec, fl
 // 2. Calculate Point Light
 vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, vec3 albedoSpec, float specMapVal, float shininess) {
     vec3 lightDir = normalize(light.position - fragPos);
-    
-    // Diffuse shading
     float diff = max(dot(normal, lightDir), 0.0);
-    
-    // Specular shading (Blinn-Phong)
     vec3 halfwayDir = normalize(lightDir + viewDir);
     float spec = pow(max(dot(normal, halfwayDir), 0.0), shininess);
     
-    // Attenuation
-    float distance    = length(light.position - fragPos);
+    float distance = length(light.position - fragPos);
     float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));    
     
-    // Combine results
-    vec3 ambient  = light.color * light.intensity * 0.1 * albedoSpec;
-    vec3 diffuse  = light.color * light.intensity * diff * albedoSpec;
+    vec3 ambient = light.color * light.intensity * 0.1 * albedoSpec;
+    vec3 diffuse = light.color * light.intensity * diff * albedoSpec;
     vec3 specular = light.color * light.intensity * spec * specMapVal;
     
-    ambient  *= attenuation;
-    diffuse  *= attenuation;
-    specular *= attenuation;
+    return (ambient + diffuse + specular) * attenuation;
+}
+
+// --- NEW: Calculate Spot Light ---
+vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir, vec3 albedoSpec, float specMapVal, float shininess) {
+    vec3 lightDir = normalize(light.position - fragPos);
     
-    return (ambient + diffuse + specular);
+    // Check if we are inside the cone
+    float theta = dot(lightDir, normalize(-light.direction));
+    float epsilon = light.cutOff - light.outerCutOff;
+    float intensity = clamp((theta - light.outerCutOff) / epsilon, 0.0, 1.0);
+    
+    // Standard lighting (diffuse + specular)
+    float diff = max(dot(normal, lightDir), 0.0);
+    vec3 halfwayDir = normalize(lightDir + viewDir);
+    float spec = pow(max(dot(normal, halfwayDir), 0.0), shininess);
+    
+    // Distance attenuation
+    float distance = length(light.position - fragPos);
+    float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));    
+    
+    // Combine
+    vec3 ambient = light.color * light.intensity * 0.1 * albedoSpec;
+    vec3 diffuse = light.color * light.intensity * diff * albedoSpec;
+    vec3 specular = light.color * light.intensity * spec * specMapVal;
+    
+    // Apply Soft Edges (intensity) and Distance Fade (attenuation)
+    return (ambient + diffuse + specular) * attenuation * intensity;
 }
 
 // ==========================================
 // MAIN AGGREGATOR
 // ==========================================
 
-// Call this function in your main()
 vec3 CalculateAllLights(vec3 normal, vec3 fragPos, vec3 viewPos, vec3 albedo, float specMap, float shininess) {
     vec3 norm = normalize(normal);
     vec3 viewDir = normalize(viewPos - fragPos);
@@ -107,6 +133,11 @@ vec3 CalculateAllLights(vec3 normal, vec3 fragPos, vec3 viewPos, vec3 albedo, fl
     // Point Lights
     for(int i = 0; i < numPointLights; i++) {
         result += CalcPointLight(pointLights[i], norm, fragPos, viewDir, albedo, specMap, shininess);
+    }
+    
+    // Spot Lights Loop ---
+    for(int i = 0; i < numSpotLights; i++) {
+        result += CalcSpotLight(spotLights[i], norm, fragPos, viewDir, albedo, specMap, shininess);
     }
     
     return result;

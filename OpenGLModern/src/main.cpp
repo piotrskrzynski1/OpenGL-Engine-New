@@ -1,5 +1,5 @@
 ﻿#include <OPENGL/glad/glad.h>
-#include <OPENGL/GLFW/glfw3.h>
+#include <GLFW/glfw3.h>
 #include <iostream>
 #include <vector>
 #include <memory>
@@ -60,14 +60,9 @@ int main() {
     // --- 2. SERVICE REGISTRATION (Composition Root) ---
     
     // Create the services
-    auto inputSystem = std::make_shared<InputManager>();
-    auto renderSystem = std::make_shared<RenderContext>();
-    auto objectSystem = std::make_shared<GameObjectManager>();
-
-    // Register them to the Locator
-    ServiceLocator::Get().Provide<InputManager>(inputSystem);
-    ServiceLocator::Get().Provide<RenderContext>(renderSystem);
-    ServiceLocator::Get().Provide<GameObjectManager>(objectSystem);
+    auto inputSystem = ServiceLocator::Get().Create<InputManager>();
+    auto renderSystem = ServiceLocator::Get().Create<RenderContext>();
+    auto objectSystem = ServiceLocator::Get().Create<GameObjectManager>();
 
     // Initialize the services
     inputSystem->Initialize(window);
@@ -86,7 +81,7 @@ int main() {
     auto cube1 = std::make_shared<Cube>(glm::vec3(0.0f, 0.0f, 0.0f));
 
     // Add Lights
-    renderSystem->GetLightManager().addPointLight(glm::vec3(0.0f, 1.5f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f));
+    //renderSystem->GetLightManager().addPointLight(glm::vec3(0.0f, 1.5f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f));
 
     // --- 4. GAME LOOP ---
     double lastFrame = 0.0f;

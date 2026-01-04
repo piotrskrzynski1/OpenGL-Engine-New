@@ -7,6 +7,9 @@ RenderContext::RenderContext()
     projection(1.0f),
     mainCam(nullptr)
 {
+    // FIX: Ask the ServiceLocator to create the LightManager.
+    // This creates it, registers it, and gives us the pointer.
+    lightmanager = ServiceLocator::Get().Create<LightManager>();
 }
 
 const glm::mat4& RenderContext::GetViewMatrix() const {
@@ -18,7 +21,7 @@ const glm::mat4& RenderContext::GetProjectionMatrix() const {
 }
 
 LightManager& RenderContext::GetLightManager() {
-    return lightmanager;
+    return *lightmanager; 
 }
 
 Camera* RenderContext::GetMainCamera() {
@@ -36,7 +39,7 @@ void RenderContext::SetProjectionMatrix(const glm::mat4& p) {
     projection = p;
 }
 
-void RenderContext::SetLightManager(const LightManager& lm) {
+void RenderContext::SetLightManager(std::shared_ptr<LightManager> lm) {
     lightmanager = lm;
 }
 

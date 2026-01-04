@@ -1,10 +1,10 @@
 #pragma once
 #include "ServiceLocator.hpp"
-#include <OPENGL/GLFW/glfw3.h>
+#include <GLFW/glfw3.h>
 
 class InputManager : public IService {
+friend class ServiceLocator;
 public:
-    InputManager() = default;
     
     // We disable copying/moving to prevent callback confusion
     InputManager(const InputManager&) = delete;
@@ -72,6 +72,7 @@ public:
     }
 
 private:
+    InputManager() = default;
     GLFWwindow* window = nullptr;
 
     // Mouse state

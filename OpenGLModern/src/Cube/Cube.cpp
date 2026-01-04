@@ -8,7 +8,7 @@
 #include "GameObjects/Camera/Camera.hpp"
 
 #include <OPENGL/glad/glad.h>
-#include <OPENGL/GLFW/glfw3.h>
+#include <GLFW/glfw3.h>
 #include <OPENGL/glm/glm.hpp>
 #include <OPENGL/glm/gtc/matrix_transform.hpp>
 #include <iostream>

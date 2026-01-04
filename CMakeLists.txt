@@ -11,10 +11,15 @@ find_package(OpenGL REQUIRED)
 
 # --- GLFW ---
 FetchContent_Declare(
-    glfw
-    GIT_REPOSITORY https://github.com/glfw/glfw.git
-    GIT_TAG        3.3.8
+glfw 
+GIT_REPOSITORY https://github.com/glfw/glfw.git 
+GIT_TAG master
 )
+
+set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+
 FetchContent_MakeAvailable(glfw)
 
 # --- GoogleTest ---
@@ -67,7 +72,7 @@ target_include_directories(EngineCore PUBLIC "${SOURCE_DIR}")
 # ==========================================
 
 add_executable(GameApp "${SOURCE_DIR}/src/main.cpp")
-target_link_libraries(GameApp PRIVATE EngineCore)
+target_link_libraries(GameApp PRIVATE EngineCore glfw)
 
 # Asset Copying
 add_custom_command(TARGET GameApp POST_BUILD
@@ -94,6 +99,7 @@ if(EXISTS "${TEST_DIR}")
     target_link_libraries(UnitTests PRIVATE 
         EngineCore 
         GTest::gtest_main
+        glfw
     )
 
     # Allow tests to access headers from the root Includes folder

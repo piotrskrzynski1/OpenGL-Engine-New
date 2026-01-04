@@ -8,14 +8,15 @@
 // Your specific includes
 #include <OPENGL/glm/glm.hpp>
 #include <Shader/Shader.hpp> // Assuming this is where your Shader class lives
-
+#include <Engine/Managers/ServiceLocator.hpp>
 // ==========================================
 // Light Types
 // ==========================================
 
 enum class LightType {
     Directional,
-    Point
+    Point,
+    Spot
 };
 
 // ==========================================
@@ -73,13 +74,41 @@ public:
     } attenuation;
 };
 
+class SpotLight : public Light {
+public:
+    // cutOffInDegrees: The angle of the inner cone (full brightness)
+    // outerCutOffInDegrees: The angle of the outer cone (fades to darkness)
+    SpotLight(const glm::vec3& pos, const glm::vec3& dir, const glm::vec3& color, 
+              float cutOffInDegrees, float outerCutOffInDegrees, float intensity = 1.0f)
+        : Light(color, intensity), position(pos), direction(glm::normalize(dir)) 
+    {
+        // Convert degrees to Cosine values for efficient shader calculation
+        cutOff = glm::cos(glm::radians(cutOffInDegrees));
+        outerCutOff = glm::cos(glm::radians(outerCutOffInDegrees));
+    }
+
+    LightType getType() const override { return LightType::Spot; }
+
+    glm::vec3 position;
+    glm::vec3 direction;
+    float cutOff;
+    float outerCutOff;
+
+    struct Attenuation {
+        float constant = 1.0f;
+        float linear = 0.09f;
+        float quadratic = 0.032f;
+    } attenuation;
+};
+
 // ==========================================
 // Light Manager
 // ==========================================
 
-class LightManager {
+class LightManager : public IService {
+
+    friend class ServiceLocator;
 public:
-    LightManager() = default;
     ~LightManager() = default;
 
     // --- Add Lights ---
@@ -96,9 +125,17 @@ public:
         return light;
     }
 
+    std::shared_ptr<SpotLight> addSpotLight(const glm::vec3& pos, const glm::vec3& dir, const glm::vec3& color, 
+                                            float cutOffDeg = 12.5f, float outerCutOffDeg = 15.0f, float intensity = 1.0f) {
+        auto light = std::make_shared<SpotLight>(pos, dir, color, cutOffDeg, outerCutOffDeg, intensity);
+        spotLights.push_back(light);
+        return light;
+    }
+
     void clear() {
         dirLights.clear();
         pointLights.clear();
+        spotLights.clear();
     }
 
     // --- Main Registration Function ---
@@ -144,10 +181,39 @@ public:
 
             activePointLights++;
         }
+
         shader.setInt("numPointLights", activePointLights);
+
+        int activeSpotLights = 0;
+        for (const auto& light : spotLights) {
+            if (!light->enabled) continue;
+
+            // Limit to prevent shader overflow (Matching defines in GLSL)
+            if (activeSpotLights >= 4) break; 
+
+            std::string base = "spotLights[" + std::to_string(activeSpotLights) + "]";
+
+            shader.setVec3(base + ".position", light->position);
+            shader.setVec3(base + ".direction", light->direction);
+            shader.setVec3(base + ".color", light->color);
+            shader.setFloat(base + ".intensity", light->intensity);
+
+            shader.setFloat(base + ".cutOff", light->cutOff);
+            shader.setFloat(base + ".outerCutOff", light->outerCutOff);
+
+            shader.setFloat(base + ".constant", light->attenuation.constant);
+            shader.setFloat(base + ".linear", light->attenuation.linear);
+            shader.setFloat(base + ".quadratic", light->attenuation.quadratic);
+
+            activeSpotLights++;
+        }
+        shader.setInt("numSpotLights", activeSpotLights);
     }
 
 private:
+
+    LightManager() = default;
     std::vector<std::shared_ptr<DirectionalLight>> dirLights;
     std::vector<std::shared_ptr<PointLight>> pointLights;
+    std::vector<std::shared_ptr<SpotLight>> spotLights;
 };

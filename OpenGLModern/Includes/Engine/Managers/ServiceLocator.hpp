@@ -6,7 +6,7 @@
 #include <string>
 #include <iostream>
 
-// Base interface for all services
+// 1. Ensure the base interface exists
 class IService {
 public:
     virtual ~IService() = default;
@@ -14,7 +14,6 @@ public:
 
 class ServiceLocator {
 public:
-    // Global Access Point
     static ServiceLocator& Get() {
         static ServiceLocator instance;
         return instance;
@@ -23,10 +22,16 @@ public:
     ServiceLocator(const ServiceLocator&) = delete;
     ServiceLocator& operator=(const ServiceLocator&) = delete;
 
-    // Register a service
-    template <typename T>
-    void Provide(std::shared_ptr<T> service) {
+    // --- NEW: Create and Register a service in one step ---
+    // This allows passing arguments to the constructor: Create<Camera>(pos, up, yaw, pitch);
+    template <typename T, typename... Args>
+    std::shared_ptr<T> Create(Args&&... args) {
+        // We use 'new' directly because ServiceLocator will be a friend
+        // and can access the private constructor.
+        std::shared_ptr<T> service(new T(std::forward<Args>(args)...));
+        
         services_[std::type_index(typeid(T))] = service;
+        return service;
     }
 
     // Retrieve a service
