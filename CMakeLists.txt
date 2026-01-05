@@ -11,9 +11,9 @@ find_package(OpenGL REQUIRED)
 
 # --- GLFW ---
 FetchContent_Declare(
-glfw 
-GIT_REPOSITORY https://github.com/glfw/glfw.git 
-GIT_TAG master
+    glfw 
+    GIT_REPOSITORY https://github.com/glfw/glfw.git 
+    GIT_TAG master
 )
 
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
@@ -21,6 +21,21 @@ set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 
 FetchContent_MakeAvailable(glfw)
+
+# --- Assimp (ADDED) ---
+FetchContent_Declare(
+    assimp
+    GIT_REPOSITORY https://github.com/assimp/assimp.git
+    GIT_TAG v5.4.3  # Using a specific tag is safer than master
+)
+
+# Optimization: Disable Assimp tools, tests, and exporters to speed up build
+set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE BOOL "" FORCE)
+set(ASSIMP_NO_EXPORT ON CACHE BOOL "" FORCE) # We usually only need to Import, not Export
+set(ASSIMP_INSTALL_PDB OFF CACHE BOOL "" FORCE)
+
+FetchContent_MakeAvailable(assimp)
 
 # --- GoogleTest ---
 set(CMAKE_TLS_VERIFY OFF) 
@@ -61,7 +76,8 @@ list(FILTER ENGINE_SOURCES EXCLUDE REGEX ".*main\\.cpp$")
 
 add_library(EngineCore STATIC ${ENGINE_SOURCES} ${ENGINE_HEADERS})
 
-target_link_libraries(EngineCore PRIVATE glfw OpenGL::GL)
+# Link Assimp to the EngineCore
+target_link_libraries(EngineCore PRIVATE glfw OpenGL::GL assimp)
 
 # FIX: Point to the correct Include directory
 target_include_directories(EngineCore PUBLIC "${INCLUDE_DIR}")
@@ -72,7 +88,7 @@ target_include_directories(EngineCore PUBLIC "${SOURCE_DIR}")
 # ==========================================
 
 add_executable(GameApp "${SOURCE_DIR}/src/main.cpp")
-target_link_libraries(GameApp PRIVATE EngineCore glfw)
+target_link_libraries(GameApp PRIVATE EngineCore glfw assimp)
 
 # Asset Copying
 add_custom_command(TARGET GameApp POST_BUILD
@@ -100,6 +116,8 @@ if(EXISTS "${TEST_DIR}")
         EngineCore 
         GTest::gtest_main
         glfw
+        assimp
+        # Assimp is linked transitively via EngineCore, but explicit linking is okay too
     )
 
     # Allow tests to access headers from the root Includes folder
